@@ -1,0 +1,219 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+ 
+```{r}
+clean_data=read.csv('../data/cleaned_hm.csv')
+demographic=read.csv('../data/demographic.csv')
+senselabel=read.csv('../data/senselabel.csv')
+entertainment=read.csv('../data/topic_dict/entertainment-dict.csv',header = FALSE)
+exercise=read.csv('../data/topic_dict/exercise-dict.csv',header = FALSE)
+family=read.csv('../data/topic_dict/family-dict.csv',header = FALSE)
+food=read.csv('../data/topic_dict/food-dict.csv',header = FALSE)
+people=read.csv('../data/topic_dict/people-dict.csv',header = FALSE)
+pets=read.csv('../data/topic_dict/pets-dict.csv',header = FALSE)
+school=read.csv('../data/topic_dict/school-dict.csv',header = FALSE)
+shopping=read.csv('../data/topic_dict/shopping-dict.csv',header = FALSE)
+work=read.csv('../data/topic_dict/work-dict.csv',header = FALSE)
+```
+
+```{r}
+summary(clean_data)
+```
+
+```{r}
+clean_data$cleaned_hm=as.character(clean_data$cleaned_hm)
+```
+
+```{r}
+library(dplyr)
+library(tidytext)
+#class(clean_data)
+tidy_word=clean_data %>%
+  unnest_tokens(word,cleaned_hm)
+clean_word=tidy_word%>%
+  anti_join(get_stopwords())
+pacman::p_load(textstem, dplyr)
+clean_word['lem_word']=lemmatize_strings(clean_word$word)
+head(clean_word)
+```
+
+```{r}
+clean_word%>%
+  count(lem_word,sort=TRUE)
+library(wordcloud)
+clean_word%>%
+  count(lem_word)%>%
+  with(wordcloud(lem_word,n,max.words = 100))
+```
+
+```{r}
+write.csv(clean_word,'../output/clean_word.csv')
+```
+
+
+
+```{r}
+# library('tm')
+# corpus <- Corpus(VectorSource(clean_data$cleaned_hm))
+# dtm <- DocumentTermMatrix(corpus,
+#  control = list(stemming = TRUE, stopwords = TRUE, minWordLength = 3,
+#  removeNumbers = TRUE, removePunctuation = TRUE))
+# dim(dtm)
+# sum(dtm$dimnames$Terms=='happy')
+# sum(inspect(dtm[1,]))
+```
+
+```{r}
+# library('topicmodels')
+# lda=LDA(dtm,10)
+```
+```{r}
+entertainment$label='entertainment'
+pacman::p_load(textstem, dplyr)
+entertainment$V1=lemmatize_strings(entertainment$V1)
+entertainment=entertainment[!duplicated(entertainment$V1), ]
+
+exercise$label='exercise'
+exercise$V1=lemmatize_strings(exercise$V1)
+exercise=exercise[!duplicated(exercise$V1), ]
+
+family$label='family'
+family$V1=lemmatize_strings(family$V1)
+family=family[!duplicated(family$V1), ]
+
+food$label='food'
+food$V1=lemmatize_strings(food$V1)
+food=food[!duplicated(food$V1), ]
+
+people$label='people'
+people$V1=lemmatize_strings(people$V1)
+people=people[!duplicated(people$V1), ]
+
+pets$label='pets'
+pets$V1=lemmatize_strings(pets$V1)
+pets=pets[!duplicated(pets$V1), ]
+
+school$label='school'
+school$V1=lemmatize_strings(school$V1)
+school=school[!duplicated(school$V1), ]
+
+shopping$label='shopping'
+shopping$V1=lemmatize_strings(shopping$V1)
+shopping=shopping[!duplicated(shopping$V1), ]
+
+work$label='work'
+work$V1=lemmatize_strings(work$V1)
+work=work[!duplicated(work$V1), ]
+
+label=rbind(entertainment,exercise,family,
+            food,people,pets,school,shopping,
+            work)
+```
+
+```{r}
+library(plyr)
+library(dplyr)
+ret_lab=function(a)
+{
+  return(ifelse(sum(label$V1==a)>0,label[label$V1==a,'label'],'NA'))
+}
+clean_data$label=0
+
+for(i in seq(dim(clean_data)[1]))
+{
+  temp=clean_word[clean_word$hmid==clean_data$hmid[i],'lem_word']
+  topic=aaply(temp,1,ret_lab)
+  topic=topic[topic!='NA']%>%table()%>%as.data.frame()
+  if(dim(topic)[1]!=0){
+    clean_data$label[i]=topic[topic$Freq==max(topic$Freq),1]%>%
+    as.character()%>%
+    paste(collapse = '+')
+  }else{
+    clean_data$label[i]='No topic'
+  }
+}
+```
+
+```{r}
+write.csv(clean_data,'../output/clean_data_topic.csv')
+```
+
+```{r}
+clean_data=read.csv('../output/clean_data_topic.csv')
+```
+
+```{r}
+dem_mer=merge(clean_data,demographic,all=TRUE)
+dem_mer=dem_mer[dem_mer$reflection_period=='24h',]
+dim(dem_mer)
+dim(na.omit(dem_mer))
+library(dplyr)
+library(tidytext)
+dem_mer$cleaned_hm=as.character(dem_mer$cleaned_hm)
+temp1=dem_mer %>%na.omit()%>%
+  unnest_tokens(word,cleaned_hm)
+temp2=temp1%>%
+  anti_join(get_stopwords())
+pacman::p_load(textstem, dplyr)
+temp2['lem_word']=lemmatize_strings(temp2$word)
+```
+
+```{r}
+write.csv(temp2,'../output/clean_word_topic.csv')
+```
+
+
+```{r}
+temp2=read.csv('../output/clean_word_topic.csv')
+library(dplyr)
+library(wordcloud)
+temp2[temp2$label=='family',]%>%
+  count(lem_word)%>%
+  with(wordcloud(lem_word,n,max.words = 100,colors = 'blue'))
+```
+
+```{r}
+temp2$label=as.character(temp2$label)
+library(ggplot2)
+library(plyr)
+a=aaply(temp2$label,1,nchar)
+temp3=temp2[a<13,]
+ggplot(data=temp3)+
+  geom_histogram(mapping=aes(x=label,y=..count..),stat="count",fill="lightblue", colour="black")+
+  theme(axis.text.x = element_text(size = 15, face = "bold",hjust=1,vjust = 1, angle = 45))
+
+```
+
+```{r}
+ggplot(data=temp3[(temp3$gender=="f")|(temp3$gender=="m"),])+
+  geom_histogram(mapping=aes(x=label,y=..count..),stat="count",fill="lightblue", colour="black")+
+  theme(axis.text.x = element_text(size = 10,hjust=1,vjust = 1, angle = 45))+
+  facet_wrap(~gender)
+```
+
+
+```{r}
+ggplot(data=temp3[(temp3$marital=="married")|(temp3$marital=="single"),])+
+  geom_histogram(mapping=aes(x=label,y=..count..),stat="count",fill="lightblue", colour="black")+
+  theme(axis.text.x = element_text(size = 10,hjust=1,vjust = 1, angle = 45))+
+  facet_wrap(~marital)
+```
+
+```{r}
+ggplot(data=temp3[(temp3$parenthood=="y")|(temp3$parenthood=="n"),])+
+  geom_histogram(mapping=aes(x=label,y=..count..),stat="count",fill="lightblue", colour="black")+
+  theme(axis.text.x = element_text(size = 10,hjust=1,vjust = 1, angle = 45))+
+  facet_wrap(~parenthood)
+```
+
+
+```{r}
+age=function(x)
+{
+  if(x<20) return('<20')
+  
+}
+```
+
