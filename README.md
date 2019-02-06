@@ -9,10 +9,17 @@ This is the first and only *individual* (as opposed to *team*) this semester.
 
 Term: Spring 2019
 
-+ Projec title: Lorem ipsum dolor sit amet
-+ This project is conducted by [your name]
++ Projec title: Happy Data
++ This project is conducted by Xishi Chen (UNI:xc2455)
 
-+ Project summary: [a short summary] Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
++ Project summary: In the project, I analysed HappyDB with LDA model, then divided data into different topics and found some information. Finally I got some reasons for happiness:
+
+Watching movies/ TV shows as entertainment
+Having fun and spending time with family
+Finishing everyday work and going back to home
+Doing things for the first time and learning new things
+having delicious food in dinners or lunches
+Passing an interview and getting a new job
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
